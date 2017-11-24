@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Referências</title>
+  <script type="text/javascript">
+    function generateXMLHttp() { //browser diferentes do IE?
+      if (typeof XMLHttpRequest != "undefined") { //retorna requisicao AJAX
+        return new XMLHttpRequest();
+      } else { //browser eh IE?
+        if (window.ActiveXObject) { //carrega as versoes
+          var versions = ["MSXML2.XMLHttp.5.0",
+            "MSXML2.XMLHttp.4.0",
+            "MSXML2.XMLHttp.3.0",
+            "MSXML2.XMLHttp",
+            "Microsoft.XMLHttp"
+          ];
+        }
+      }
+      //tenta criar objeto da versao mais recente
+      for (var i = 0; i < versions.length; i++) {
+        try { //retorna requisicao AJAX
+          return new ActiveXObject(versions[i]);
+        } catch (e) {}
+      }
+      //informa que o browser nao suporte AJAX
+      alert("Seu navegador não pode trabalhar com Ajax!");
+    }
+
+    function gerarReferenciaArtigoEvento(event) {
+      event.preventDefault();
+      //criando requisicao AJAX
+      var request = generateXMLHttp();
+
+      //define a funcao de callback que vai tratar os dados quando chegar
+      request.onreadystatechange = function() { //testa se o estado eh o final
+        if (request.readyState == 4) { //testa se a resposta foi Ok
+          if (request.status == 200) {
+
+            //obtem dados da requisicao em formato json
+
+            var dadosDaRequisicao = JSON.parse(request.responseText);
+            var divGeracao = document.getElementById("divRefCit");
+            var referencia = document.createElement("li");
+            var quebra = document.createElement("br")
+            var citacaoDireta = document.createElement("li");
+            var citacaoIndireta = document.createElement("li");
+
+            referencia.innerHTML =
+              dadosDaRequisicao.ultimo_nome.toUpperCase() + "," +
+              dadosDaRequisicao.primeiro_nome + ". " +
+              dadosDaRequisicao.titulo_trabalho + ". In: " +
+              dadosDaRequisicao.evento + ", " +
+              dadosDaRequisicao.numero_evento + "., " +
+              dadosDaRequisicao.ano + ", " +
+              dadosDaRequisicao.cidade + ". " +
+              dadosDaRequisicao.titulo_documento.bold() + "... " +
+              dadosDaRequisicao.local_publicacao + " : " +
+              dadosDaRequisicao.editora + ", " +
+              dadosDaRequisicao.data_publicacao + ". p. " +
+              dadosDaRequisicao.pagina_inicial + "-" +
+              dadosDaRequisicao.pagina_final + ".";
+
+            citacaoDireta.innerHTML =
+              "Citação Direta - " + dadosDaRequisicao.ultimo_nome + " (" +
+              dadosDaRequisicao.ano + ", " + "p. " +
+              dadosDaRequisicao.pagina_inicial + ")";
+
+            citacaoIndireta.innerHTML =
+              "Citação Indireta - " + " (" + dadosDaRequisicao.ultimo_nome.toUpperCase() + ", " +
+              dadosDaRequisicao.ano + ")";
+
+            divGeracao.appendChild(referencia);
+            divGeracao.appendChild(quebra);
+            divGeracao.appendChild(citacaoDireta);
+            divGeracao.appendChild(citacaoIndireta);
+          }
+        }
+      };
+
+      //configurando a requisicao
+      //parametro 1: tipo de envio GET ou POST
+      //parametro 2: a pagina e valores de parametros HTTP
+      //parametro 3: requisicao deve funcionar de forma assincrona ou nao?
+      request.open("post", "/gerarReferencia", true);
+      request.setRequestHeader("Content-Type", "application/json");
+
+      //envia a requisicao
+      var requisicao = {
+
+        "primeiro_nome": document.getElementById("primeiro_nome").value,
+        "ultimo_nome": document.getElementById("ultimo_nome").value,
+        "titulo_trabalho": document.getElementById("titulo_trabalho").value,
+        "evento": document.getElementById("evento").value,
+        "numero_evento": document.getElementById("numero_evento").value,
+        "ano": document.getElementById("ano").value,
+        "cidade": document.getElementById("cidade").value,
+        "titulo_documento": document.getElementById("titulo_documento").value,
+        "local_publicacao": document.getElementById("local_publicacao").value,
+        "editora": document.getElementById("editora").value,
+        "data_publicacao": document.getElementById("data_publicacao").value,
+        "pagina_inicial": document.getElementById("pagina_inicial").value,
+        "pagina_final": document.getElementById("pagina_final").value
+      }
+
+      request.send(JSON.stringify(requisicao));
+    }
+
+    function inserirCabecalho(idDiv, titulo) {
+      div = document.getElementById(idDiv);
+      while (div.firstChild !== null) {
+        div.removeChild(div.firstChild);
+      }
+      titulo2 = document.createElement("h2");
+      titulo2.innerHTML = titulo;
+      div.appendChild(titulo2);
+    }
+
+    function esconderDivs(idDivs) {
+      for (let i = 0; i < idDivs.length; i++) {
+        div = document.getElementById(idDivs[i]);
+        div.style.display = "none";
+      }
+    }
+
+    function mostrarDiv(idDivs) {
+      for (let i = 0; i < idDivs.length; i++) {
+        div = document.getElementById(idDivs[i]);
+        div.style.display = "block";
+      }
+    }
+
+    function mostrarFormularioMonografia() {
+      inserirCabecalho("divTipo", "Monografia");
+      mostrarDiv(["divAutorPessoal", "divMonografia", "divGerar"]);
+      esconderDivs(["divArtigoRevista", "divArtigoEvento"]);
+    }
+
+    function mostrarFormularioArtigoRevista() {
+      inserirCabecalho("divTipo", "Artigo de revista");
+      mostrarDiv(["divAutorPessoal", "divArtigoRevista", "divGerar"]);
+      esconderDivs(["divMonografia", "divArtigoEvento"]);
+    }
+
+    function mostrarFormularioArtigoEvento() {
+      inserirCabecalho("divTipo", "Artigo de evento");
+      mostrarDiv(["divAutorPessoal", "divArtigoEvento", "divGerar"]);
+      esconderDivs(["divMonografia", "divArtigoRevista"]);
+    }
+  </script>
+</head>
+
+<body>
+  <div>
+    <h1>Gerador de Referências</h1>
+  </div>
+  <div style="border:1px solid black;">
+    <h2>Escolha o tipo</h2>
+    <ul>
+      <li><button type="button" onclick="mostrarFormularioMonografia()">Monografia</button></li>
+      <li><button type="button" onclick="mostrarFormularioArtigoRevista()">Artigo de revista</button></li>
+      <li><button type="button" onclick="mostrarFormularioArtigoEvento()">Artigo de evento</button></li>
+    </ul>
+  </div>
+  <div id="divTipo">
+  </div>
+  <form method="POST">
+    <div id="divAutorPessoal" style="display: none;">
+      <p>Último sobrenome: <input type="text" id="ultimo_nome" name="ultimo_nome"></p>
+      <p> Primeiros nomes ou iniciais: <input type="text" id="primeiro_nome" name="primeiro_nome"></p>
+    </div>
+    <div id="divArtigoEvento" style="display: none;">
+      <p>Título do trabalho: <input id="titulo_trabalho" type="text" name="titulo_trabalho"></p>
+      <p>Evento: <input id="evento" type="text" name="evento"></p>
+      <p>Numeração do evento: <input id="numero_evento" type="text" name="numero_evento"></p>
+      <p>Ano: <input id="ano" type="text" name="ano"></p>
+      <p>Cidade: <input id="cidade" type="text" name="cidade"></p>
+      <p>Título do documento: <input id="titulo_documento" type="text" name="titulo_documento"></p>
+      <p>Local de publicação: <input id="local_publicacao" type="text" name="local_publicacao"></p>
+      <p>Editora: <input id="editora" type="text" name="editora"></p>
+      <p> Data de publicação: <input id="data_publicacao" type="text" name="data_publicacao"></p>
+      <p>Página inicial: <input id="pagina_inicial" type="text" name="pagina_inicial"> Página final: <input id="pagina_final" type="text" name="pagina_final"></p>
+    </div>
+  </form>
+  <div id="divMonografia" style="display: none;">
+    <p>Título: <input type="text" id="titulo"></p>
+    <p>Edição: <input type="text" id="edicao"></p>
+    <p>Local: <input type="text" id="local"></p>
+    <p>Editora: <input type="text" id="editora"></p>
+    <p>Ano: <input type="text" id="ano"></p>
+  </div>
+  <div id="divArtigoRevista" style="display: none;">
+    <p>Título (artigo ou matéria): <input type="text"></p>
+    <p>Título (publicação): <input type="text"></p>
+    <p>Cidade: <input type="text"></p>
+    <p>Volume: <input type="text"></p>
+    <p>Número: <input type="text"></p>
+    <p>Página inicial: <input type="text"> Página final: <input type="text"></p>
+    <p>Data ou intervalo de publicação: <input type="text"></p>
+  </div>
+  <div id="divGerar" style="display: none;">
+    <p>
+      <input type="submit" value="Gerar referencias" onclick="gerarReferenciaArtigoEvento(event)">
+    </p>
+  </div>
+  <div style="border:1px solid black;">
+    <div id="divRefCit">
+      <h2>Referência e Citação</h2>
+    </div>
+  </div>
+</body>
+
+</html>
